@@ -1,0 +1,28 @@
+gradio
+opencv-python
+torch 
+torchvision
+timm
+scipy
+redis
+gdown
+huggingface_hub
+upstash-redis
+apscheduler
+
+pip install --no-build-isolation 'git+https://github.com/facebookresearch/detectron2.git'
+git clone 'https://github.com/facebookresearch/detectron2'
+git clone https://github.com/facebookresearch/Mask2Former.git
+
+
+python -m pip install "paddleocr[all]"
+git clone https://github.com/PaddlePaddle/PaddleOCR
+cd PaddleOCR
+python -m pip install -r requirements.txt
+cd ..
+python -m pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+
+
+find . -type d -name "__pycache__" -exec rm -rf {} +
+
+

@@ -1,0 +1,10 @@
+gradio
+opencv-python-headless
+timm
+scipy
+redis
+gdown
+python-dotenv
+huggingface_hub
+upstash-redis
+apscheduler
