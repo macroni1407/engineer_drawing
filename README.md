@@ -244,6 +244,15 @@ Pretrained model weights (Mask2Former - backbone Swin-Transformer) are available
 
   [Mask2Former](https://colab.research.google.com/drive/1IJ3b8yaNj3-zTX1RInX5k8sjnR444XzS?pli=1#scrollTo=7raGqTmjTP0k)
 
+### PaddleOcrVL-1.5 Inference (CPU)
+- Notebook:  
+
+  [PaddleOcrVL](./notebooks/PaddleOcrVL_Inference_CPU.ipynb)
+
+- GG Colab:  
+
+  [PaddleOcrVL](https://colab.research.google.com/drive/1dFcReYG-UNdJfyDMi6dPPNSjimh6VdIn#scrollTo=1mg0QRxTJnuL)
+
 ### VLM Processing HTML & TEXT (RAG + VLM)
 - Notebook:  
 
