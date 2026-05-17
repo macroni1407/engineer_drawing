@@ -33,17 +33,19 @@ RUN pip install --upgrade pip setuptools wheel
 # Copy requirements
 COPY requirements.txt .
 
+# CPU
 # Install PyTorch CPU first
 RUN pip install --no-cache-dir \
     torch torchvision \
     --index-url https://download.pytorch.org/whl/cpu
 
-# Install PyTorch for GPU
-# RUN pip install torch torchvision 
-
 # Install PaddlePaddle CPU
 RUN pip install paddlepaddle==3.2.0 \
     -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+
+# GPU
+# Install PyTorch for GPU
+# RUN pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
 # Install PaddlePaddle for GPU
 # RUN pip install paddlepaddle-gpu==3.2.0 \
