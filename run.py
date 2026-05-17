@@ -7,6 +7,6 @@ from configs import *
 
 demo.launch(
         server_name="0.0.0.0",
-        server_port=GRADIO_PORT,
+        server_port=7860,
         share=True,
       )

@@ -76,19 +76,39 @@ Object Cropping
 </table>
 </div>
 
-<!--
+
 ---
 
 ## Configuration
+```bash
+git clone https://github.com/macroni1407/engineer_drawing.git
+cd engineer_drawing
+```
 
 ### Create Conda Environment
 
 ```bash
 conda create -n eng_draw python=3.10
-
 conda activate eng_draw
 ```
 
+---
+
+### Create .env file
+
+```bash
+touch .env
+```
+
+### Create Upstash Redis token
+- Go https://upstash.com/ to create a database redis
+- Then fill url, token to .env
+  eg:
+
+  ```bash
+  UPSTASH_REDIS_REST_URL="https://bursting-hookworm-124192.upstash.io"
+  UPSTASH_REDIS_REST_TOKEN="gQAAAA****************************ZjZjA1Yw"
+  ```
 ---
 
 ## Installation
@@ -159,7 +179,15 @@ The application can also be run using Docker.
 
 ### Run with Docker
 
-NOTE: In Dockerfile: Just  un-comment if using GPU and comment for CPU
+NOTE: In Dockerfile: 
+    + Just  un-comment if using GPU and comment for CPU               
+    + Add ENV for Redis    (Maybe future using aws S3 to store)
+  
+```bash
+ENV UPSTASH_REDIS_REST_URL="https://bursting-hookworm-124192.upstash.io"
+ENV UPSTASH_REDIS_REST_TOKEN="gQAAAA****************************ZjZjA1Yw"
+```
+  
 
 Build Docker image:
 
@@ -173,7 +201,7 @@ Run container:
 docker run -it -p 7860:7860 engineer_drawing
 ```
 
-<!-- > Remove `--gpus all` if running on CPU only. -->
+<!-- <!-- > Remove `--gpus all` if running on CPU only. -->
 
 ---
 
