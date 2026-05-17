@@ -115,15 +115,6 @@ touch .env
 
 ### Step 1: Install Deep Learning Frameworks
 
-#### Use GPU
-
-```bash
-pip install torch torchvision
-
-pip install paddlepaddle-gpu==3.2.0 \
--i https://www.paddlepaddle.org.cn/packages/stable/cu118/
-```
-
 #### Use CPU
 
 ```bash
@@ -132,6 +123,15 @@ pip install --no-cache-dir torch torchvision \
 
 pip install paddlepaddle==3.2.0 \
 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+```
+
+#### Use GPU
+
+```bash
+pip install torch torchvision
+
+pip install paddlepaddle-gpu==3.2.0 \
+-i https://www.paddlepaddle.org.cn/packages/stable/cu118/
 ```
 
 ---
