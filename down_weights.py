@@ -26,5 +26,5 @@ snapshot_download(
     repo_type="model",
     local_dir="model_weight",
     # 1. Bỏ qua file README và các file hệ thống của Hugging Face
-    ignore_patterns=["README.md", ".gitattributes", ".jsonl"], 
+    ignore_patterns=["README.md", ".gitattributes", ".jsonl", ".DS_Store"], 
 )
