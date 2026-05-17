@@ -180,8 +180,8 @@ The application can also be run using Docker.
 ### Run with Docker
 
 NOTE: In Dockerfile: 
-    + Just  un-comment if using GPU and comment for CPU               
-    + Add ENV for Redis    (Maybe future using aws S3 to store)
+- Just  un-comment if using GPU and comment for CPU               
+- Add ENV for Redis    (Maybe future using aws S3 to store)
   
 ```bash
 ENV UPSTASH_REDIS_REST_URL="https://bursting-hookworm-124192.upstash.io"
