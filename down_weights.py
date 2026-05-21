@@ -22,7 +22,7 @@ os.makedirs("model_weight", exist_ok=True)
 #         gdown.download(url, output, quiet=False)
 
 snapshot_download(
-    repo_id="macroni2002/engineer_drawing_mask2former_weights",
+    repo_id="macroni2002/mask2former_base_weights",
     repo_type="model",
     local_dir="model_weight",
     # 1. Bỏ qua file README và các file hệ thống của Hugging Face
