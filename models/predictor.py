@@ -23,6 +23,9 @@ def build_predictor(config_path, weight_path):
 
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = SCORE_THRESH_TEST
 
+    cfg.INPUT.MIN_SIZE_TEST = MIN_SIZE_TEST 
+    cfg.INPUT.MAX_SIZE_TEST = MAX_SIZE_TEST
+
     cfg.MODEL.DEVICE = DEVICE
 
     predictor = DefaultPredictor(cfg)
