@@ -18,10 +18,12 @@ git clone https://github.com/facebookresearch/Mask2Former.git
 
 python -m pip install "paddleocr[all]"
 git clone https://github.com/PaddlePaddle/PaddleOCR
-cd PaddleOCR
-python -m pip install -r requirements.txt
-cd ..
+python -m pip install -r PaddleOCR/requirements.txt
+
 python -m pip install paddlepaddle==3.2.0 -i https://www.paddlepaddle.org.cn/packages/stable/cpu/
+
+pip install paddlepaddle-gpu==3.2.0 \
+-i https://www.paddlepaddle.org.cn/packages/stable/cu118/
 
 
 find . -type d -name "__pycache__" -exec rm -rf {} +
