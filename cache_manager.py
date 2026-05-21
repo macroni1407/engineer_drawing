@@ -127,7 +127,7 @@ def save_gallery_cache(
         img,
         label_name,
         score,
-        _
+        obj_id
     ) in enumerate(crops):
 
         filename = (
@@ -140,7 +140,7 @@ def save_gallery_cache(
         )
 
         caption = (
-            f"{label_name}: {score}"
+            f"id: {obj_id} - {label_name}: {score}"
         )
 
         try:
