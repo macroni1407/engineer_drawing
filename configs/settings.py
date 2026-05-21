@@ -10,6 +10,7 @@ else:
 
 # setting for ensemble_inference
 SCORE_THRESH = 0.5
+IOU_THRESH=0.5
 BOX_NMS_THRESH = 0.4
 MASK_NMS_THRESH = 0.4
 MAX_DETECTIONS = 50
@@ -22,4 +23,6 @@ NUM_CLASSES = 3
 INSTANCE_ON = True
 SCORE_THRESH_TEST=0.5
 
+MIN_SIZE_TEST = 1000
+MAX_SIZE_TEST = 2000
 #setting for weight of model's predict
