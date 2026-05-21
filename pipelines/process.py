@@ -118,6 +118,7 @@ def process_image(input_img):
         scales=TTA_SCALES,
         flip=TTA_FLIP,
         score_thresh=SCORE_THRESH,
+        iou_thresh=IOU_THRESH,
         box_nms_thresh=BOX_NMS_THRESH,
         mask_nms_thresh=MASK_NMS_THRESH,
         max_detections=MAX_DETECTIONS,
@@ -249,13 +250,13 @@ def process_image(input_img):
     gallery_images = [
         (
             img,
-            f"{label_name}: {score}"
+            f"id: {obj_id} - {label_name}: {score}"
         )
 
         for img,
         label_name,
         score,
-        _ in crops
+        obj_id in crops
     ]
 
     # =====================================================

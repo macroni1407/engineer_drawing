@@ -96,3 +96,67 @@ def masks_to_boxes(masks):
             )
 
     return np.array(boxes)
+
+
+def soft_mask_voting(cluster_masks, cluster_scores, temperature=1.0):
+    """
+    Soft voting (giữ xác suất thay vì bool)
+    """
+    masks = np.array(cluster_masks).astype(np.float32)
+    scores = np.array(cluster_scores).astype(np.float32)
+
+    # normalize score → weight
+    weights = scores ** temperature
+    weights = weights / (weights.sum() + 1e-6)
+
+    weights = weights.reshape(-1, 1, 1)
+
+    soft_mask = (masks * weights).sum(axis=0)
+
+    return soft_mask  # float [0,1]
+
+
+def adaptive_binarize(mask, base_thresh=0.4):
+    """
+    Threshold thích nghi theo density
+    """
+    mean_val = mask.mean()
+
+    # mask mỏng → giảm threshold
+    if mean_val < 0.1:
+        thresh = base_thresh * 0.7
+    elif mean_val > 0.5:
+        thresh = base_thresh * 1.2
+    else:
+        thresh = base_thresh
+
+    return mask > thresh
+
+
+def boundary_refine(mask):
+    """
+    Preserve thin lines + clean noise
+    """
+    mask_u8 = (mask * 255).astype(np.uint8)
+
+    # 1. edge detection
+    edges = cv2.Canny(mask_u8, 50, 150)
+
+    # 2. skeletonize-like (thin lines)
+    kernel = cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3))
+
+    thin = cv2.morphologyEx(mask_u8, cv2.MORPH_OPEN, kernel)
+
+    # 3. combine edge + mask
+    combined = cv2.bitwise_or(thin, edges)
+
+    # 4. remove noise (small components)
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(combined)
+
+    cleaned = np.zeros_like(combined)
+
+    for i in range(1, num_labels):
+        if stats[i, cv2.CC_STAT_AREA] > 10:
+            cleaned[labels == i] = 255
+
+    return cleaned > 0

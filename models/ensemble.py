@@ -12,9 +12,10 @@ def ensemble_inference(
     scales=[1600],
     flip=True,
     score_thresh=0.5,
+    iou_thresh=0.5,
     box_nms_thresh=0.4,
     mask_nms_thresh=0.4,
-    max_detections=50,
+    max_detections=100,
 ):
 
     h0, w0 = image.shape[:2]
@@ -31,129 +32,127 @@ def ensemble_inference(
         predictor = model_data["predictor"]
         model_weight = model_data["weight"]
 
-        result = tta_inference(
+        result = inference_with_tta(
             predictor=predictor,
             image=image,
             scales=scales,
             flip=flip,
             score_thresh=score_thresh,
+            box_nms_thresh=box_nms_thresh,
+            mask_nms_thresh=mask_nms_thresh,
+            max_detections=max_detections,
         )
 
-        if len(result["boxes"]) == 0:
+        if len(result) == 0:
             continue
 
-        all_boxes.extend(result["boxes"])
+        masks = result.pred_masks.cpu().numpy()
+        scores = result.scores.cpu().numpy() * model_weight
+        classes = result.pred_classes.cpu().numpy()
 
-        weighted_scores = [
-            min(s * model_weight, 1.0)
-            for s in result["scores"]
-        ]
-
-        all_scores.extend(weighted_scores)
-        all_classes.extend(result["classes"])
-        all_masks.extend(result["masks"])
+        all_masks.extend(masks)
+        all_scores.extend(scores)
+        all_classes.extend(classes)
 
     # =====================================================
-    # EMPTY
+    # EMPTY CHECK
     # =====================================================
-    if len(all_boxes) == 0:
+    if len(all_masks) == 0:
         return Instances((h0, w0))
 
-    # =====================================================
-    # TO TENSOR
-    # =====================================================
-    all_boxes = torch.tensor(np.array(all_boxes))
-    all_scores = torch.tensor(np.array(all_scores))
-    all_classes = torch.tensor(np.array(all_classes))
+    all_masks = list(all_masks)
+    all_scores = list(all_scores)
+    all_classes = list(all_classes)
+
+    final_masks = []
+    final_scores = []
+    final_classes = []
 
     # =====================================================
-    # BOX NMS
+    # PROCESS PER CLASS
     # =====================================================
-    keep_box = batched_nms(
-        all_boxes,
-        all_scores,
-        all_classes,
-        box_nms_thresh,
-    )
+    unique_classes = np.unique(all_classes)
 
-    if len(keep_box) == 0:
+    for cls in unique_classes:
+        # lấy indices của class này
+        idxs = [i for i in range(len(all_masks)) if all_classes[i] == cls]
+
+        masks_cls = [all_masks[i] for i in idxs]
+        scores_cls = [all_scores[i] for i in idxs]
+
+        # sort theo score giảm dần
+        order = np.argsort(scores_cls)[::-1]
+
+        masks_cls = [masks_cls[i] for i in order]
+        scores_cls = [scores_cls[i] for i in order]
+
+        used = [False] * len(masks_cls)
+
+        # =====================================================
+        # CLUSTERING
+        # =====================================================
+        for i in range(len(masks_cls)):
+            if used[i]:
+                continue
+
+            base_mask = masks_cls[i]
+
+            cluster_masks = [base_mask]
+            cluster_scores = [scores_cls[i]]
+            used[i] = True
+
+            for j in range(i + 1, len(masks_cls)):
+                if used[j]:
+                    continue
+
+                iou = mask_iou(base_mask, masks_cls[j])
+                # dice = soft_dice(base_mask, masks_cls[j])
+
+                if iou > iou_thresh:
+                # if dice > dice_thresh:
+                    cluster_masks.append(masks_cls[j])
+                    cluster_scores.append(scores_cls[j])
+                    used[j] = True
+
+            # vote
+            soft_mask = soft_mask_voting(cluster_masks, cluster_scores)
+
+            binary_mask = adaptive_binarize(soft_mask)
+            
+            refined = boundary_refine(binary_mask)
+            refined = refine_single_mask(refined)
+
+            final_masks.append(refined)
+            final_scores.append(max(cluster_scores))
+            final_classes.append(cls)
+
+    # =====================================================
+    # LIMIT
+    # =====================================================
+    if len(final_masks) == 0:
         return Instances((h0, w0))
 
-    kept_masks = [
-        all_masks[i]
-        for i in keep_box.numpy()
-    ]
+    final_masks = np.array(final_masks)
+    final_scores = np.array(final_scores)
+    final_classes = np.array(final_classes)
 
-    kept_scores = all_scores[keep_box].numpy()
+    # sort final theo score
+    order = np.argsort(final_scores)[::-1][:max_detections]
 
-    # =====================================================
-    # MASK NMS
-    # =====================================================
-    keep_mask = mask_nms(
-        kept_masks,
-        all_scores[keep_box],
-        all_classes[keep_box],
-        iou_thresh=mask_nms_thresh,
-    )
+    final_masks = final_masks[order]
+    final_scores = final_scores[order]
+    final_classes = final_classes[order]
 
-    if len(keep_mask) == 0:
-        return Instances((h0, w0))
-
-    keep_mask = keep_mask[:max_detections]
-
-    # =====================================================
-    # FINAL SELECTED
-    # =====================================================
-    final_masks = [
-        kept_masks[i]
-        for i in keep_mask
-    ]
-
-    # final_scores = [
-    #     kept_scores[i]
-    #     for i in keep_mask
-    # ]
-
-    final_boxes = all_boxes[keep_box][keep_mask]
-    final_scores_tensor = all_scores[keep_box][keep_mask]
-    final_classes = all_classes[keep_box][keep_mask]
-
-    # =====================================================
-    # POST-PROCESSING
-    # =====================================================
-
-    # 1. Refine each mask
-    refined_masks = []
-    for mask in final_masks:
-        # refined = refine_single_mask(
-        #     mask,
-        #     eps=15,
-        #     min_samples=2,
-        # )
-        refined = refine_single_mask(mask)
-        # refined = mask
-
-        refined_masks.append(refined)
-    refined_masks = np.array(refined_masks)
-    resolved_masks = refined_masks
-
-    # =====================================================
-    # 3. Recompute boxes from refined masks
-    # =====================================================
-    refined_boxes = masks_to_boxes(
-        resolved_masks
-    )
+    # recompute boxes
+    final_boxes = masks_to_boxes(final_masks)
 
     # =====================================================
     # FINAL INSTANCES
     # =====================================================
-    final = Instances((h0, w0))
-    final.pred_boxes = Boxes(
-        torch.tensor(refined_boxes).float()
-    )
-    final.scores = final_scores_tensor
-    final.pred_classes = final_classes
-    final.pred_masks = torch.from_numpy(
-        resolved_masks
-    )
-    return final
+    instances = Instances((h0, w0))
+    instances.pred_boxes = Boxes(torch.tensor(final_boxes).float())
+    instances.scores = torch.tensor(final_scores)
+    instances.pred_classes = torch.tensor(final_classes)
+    instances.pred_masks = torch.from_numpy(final_masks)
+
+    return instances

@@ -1,5 +1,9 @@
 import cv2
+import torch
 import numpy as np
+from detectron2.layers import batched_nms
+from detectron2.structures import Instances, Boxes
+from inferences import *
 
 def tta_inference(
     predictor,
@@ -77,10 +81,79 @@ def tta_inference(
             all_masks.extend(restored_masks)
 
     return {
-        "boxes": all_boxes,
-        "scores": all_scores,
-        "classes": all_classes,
-        "masks": all_masks,
+        "boxes": np.array(all_boxes),
+        "scores": np.array(all_scores),
+        "classes": np.array(all_classes),
+        "masks": np.array(all_masks),
     }
+
+
+def inference_with_tta(
+    predictor,
+    image,
+    scales=[1600],
+    flip=True,
+    score_thresh=0.5,
+    box_nms_thresh=0.4,
+    mask_nms_thresh=0.4,
+    max_detections=50,
+):
+    h, w = image.shape[:2]
+
+    result = tta_inference(
+        predictor,
+        image,
+        scales=scales,
+        flip=flip,
+        score_thresh=score_thresh,
+    )
+
+    if len(result["boxes"]) == 0:
+        return Instances((h, w))
+        # return empty_instances(h, w)
+
+    boxes = torch.tensor(result["boxes"]).float()
+    scores = torch.tensor(result["scores"])
+    classes = torch.tensor(result["classes"])
+    masks = result["masks"]
+
+    # ================= BOX NMS =================
+    keep = batched_nms(
+        boxes,
+        scores,
+        classes,
+        box_nms_thresh
+    )
+
+    keep = keep[:max_detections]
+
+    boxes = boxes[keep]
+    scores = scores[keep]
+    classes = classes[keep]
+    masks = masks[keep.numpy()]
+
+    # ================= MASK NMS =================
+    keep_mask = mask_nms(
+        masks,
+        scores,
+        classes,
+        iou_thresh=mask_nms_thresh
+    )
+
+    keep_mask = keep_mask[:max_detections]
+
+    boxes = boxes[keep_mask]
+    scores = scores[keep_mask]
+    classes = classes[keep_mask]
+    masks = masks[keep_mask]
+
+    # ================= FINAL INSTANCES =================
+    instances = Instances((h, w))
+    instances.pred_boxes = Boxes(boxes)
+    instances.scores = scores
+    instances.pred_classes = classes
+    instances.pred_masks = torch.from_numpy(masks)
+
+    return instances
 
 
