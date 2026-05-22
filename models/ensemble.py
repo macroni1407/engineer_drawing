@@ -143,6 +143,17 @@ def ensemble_inference(
     final_scores = final_scores[order]
     final_classes = final_classes[order]
 
+    keep = mask_nms(
+        final_masks,
+        final_scores,
+        final_classes,
+        iou_thresh=mask_nms_thresh
+    )
+
+    final_masks = final_masks[keep]
+    final_scores = final_scores[keep]
+    final_classes = final_classes[keep]
+
     # recompute boxes
     final_boxes = masks_to_boxes(final_masks)
 

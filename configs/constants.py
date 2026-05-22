@@ -9,3 +9,5 @@ CLASS_PRIORITY = {
     1: 3,
     2: 1,
 }
+
+PRIORITY_WEIGHT = 0.1

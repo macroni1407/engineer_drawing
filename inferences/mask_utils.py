@@ -1,4 +1,5 @@
 import cv2
+import torch
 import numpy as np
 from pycocotools import mask as mask_utils
 
@@ -13,25 +14,37 @@ def mask_nms(
     classes,
     iou_thresh=0.5,
 ):
-    scores_np = scores.cpu().numpy()
-    classes_np = classes.cpu().numpy()
+    # handle torch / numpy
+    if isinstance(scores, torch.Tensor):
+        scores_np = scores.cpu().numpy()
+    else:
+        scores_np = scores
+
+    if isinstance(classes, torch.Tensor):
+        classes_np = classes.cpu().numpy()
+    else:
+        classes_np = classes
+
     order = scores_np.argsort()[::-1]
     keep = []
+
     while len(order) > 0:
         i = order[0]
         keep.append(i)
+
         remain = []
         for j in order[1:]:
             if classes_np[i] != classes_np[j]:
                 remain.append(j)
                 continue
-            
+
             iou = mask_iou(masks[i], masks[j])
 
             if iou < iou_thresh:
                 remain.append(j)
 
         order = np.array(remain)
+
     return keep
 
 def mask_to_coco_segmentation(mask):

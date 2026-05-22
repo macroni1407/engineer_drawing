@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from configs import CLASS_PRIORITY
+from configs import CLASS_PRIORITY, PRIORITY_WEIGHT
 from .mask_utils import mask_to_coco_segmentation
 from dataset import register_dataset
 
@@ -63,11 +63,14 @@ def crop_objects_from_masks(
 
         score = float(scores[idx])
 
+        effective_score = score + PRIORITY_WEIGHT * priority
+
         mask_infos.append(
             {
                 "idx": idx,
                 "priority": priority,
                 "score": score,
+                "effective_score": effective_score,
                 "area": area,
             }
         )
@@ -82,7 +85,7 @@ def crop_objects_from_masks(
     mask_infos = sorted(
         mask_infos,
         key=lambda x: (
-            -x["priority"],
+            -x["effective_score"],
             x["area"],
             -x["score"],
         ),
